@@ -2,7 +2,7 @@
 
 An Express app for [Railway](https://railway.com) with [WebDecoy](https://webdecoy.com) bot detection on every route. Deploy it as a starting point, or copy the few lines in `server.js` into your own app.
 
-<!-- DEPLOY_BUTTON -->
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/t2cR44?referralCode=FUqRrv&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
 ## What you get
 
