@@ -4,12 +4,15 @@ import { webdecoy } from '@webdecoy/express';
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 
+// Where the real visitor IP is depends on the platform in front of the app.
 // Railway rewrites X-Forwarded-For to exactly "<client>, <edge>" (anything the
-// client sent is dropped), and the socket peer is a third, internal hop.
-// Trusting two hops makes req.ip the real visitor rather than Railway's edge.
-app.set('trust proxy', 2);
+// client sent is dropped). Render appends to whatever the client sent:
+// "<anything>, <client>, <cloudflare>, <render>". Count the hops you actually
+// have, or req.ip is the platform's proxy (or a value the client chose).
+const onRender = Boolean(process.env.RENDER);
+app.set('trust proxy', onRender ? 3 : 2);
 
-// Railway's healthcheck. Registered before the middleware so it is never analyzed.
+// The platform healthcheck. Registered before the middleware so it is never analyzed.
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
@@ -26,6 +29,9 @@ if (!apiKey) {
 app.use(
   webdecoy({
     apiKey,
+    // Render sits behind Cloudflare, which sets CF-Connecting-IP and refuses a
+    // request that tries to supply its own.
+    trustProxy: onRender ? 'cloudflare' : 'railway',
     skipPaths: ['/health'],
   }),
 );
@@ -34,7 +40,7 @@ app.use(express.static('public'));
 
 app.get('/api/hello', (req, res) => {
   res.json({
-    message: 'Hello from Railway',
+    message: `Hello from ${onRender ? 'Render' : 'Railway'}`,
     webdecoy: req.webdecoy
       ? {
           decision: req.webdecoy.decision,
